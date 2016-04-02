@@ -13,3 +13,15 @@ completely different.
   }
 }
 ```
+
+Which is equivilent to the c code
+```
+int main(){
+  int ident = 1;
+  while (ident < 100){
+    ident++;
+  }
+  
+  return 0;
+}
+```
