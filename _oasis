@@ -2,7 +2,7 @@ Name: black
 Version: 0.1
 Synopsis: A toy compiler to practice programming language implementation
 Authors: Jonathan Poole (jonfpoole@gmail.com)
-License: LGPL with OCaml linking exception
+License: LGPLv3
 
 Description: Black will imperitive and possibly later procedural and will target x86. The point of this project is to learn more about compilers rather than produce a useful language.
 Homepage: 
