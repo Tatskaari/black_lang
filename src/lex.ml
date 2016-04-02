@@ -5,6 +5,10 @@ exception BadInput of string
 type keyword = 
 	While
 |  	If 
+|   Minus 
+|   Then  
+
+let keyword_map = [("while", While); ("if", If); ("-", Minus); ("then", Then)]
 
 type token =
 	LBrace
@@ -16,8 +20,22 @@ type token =
 |	Assign
 |	Int of int
 
+(* token with a line numer *)
+type token_line = token * int
+
 (* Returns the number of characters and the token this predicate is able to match. 0 means no match *)
 type token_pred = string -> (token option*int)
+
+let rec string_to_keyword str keyword_map =
+	match keyword_map with
+	| (key_str, key)::keyword_map -> 
+		if (String.compare key_str str) = 0 then
+			key
+		else
+			string_to_keyword str keyword_map
+	| _ -> 
+		raise (BadInput ("Not a keyword: " ^ str))
+
 
 let reg_ex_pred regex_str str  =
 	let regex = Str.regexp regex_str in
@@ -65,14 +83,28 @@ let match_ident str =
 	| (None, len) -> (None, len)
 
 let match_keyword str =
-	match (reg_ex_pred "while" str) with
+	let rec match_keyword keyword_map =
+		match keyword_map with
+		| (key_str, key)::keyword_map -> 
+			begin
+				match (reg_ex_pred key_str str) with
+				| (Some match_str, len) ->
+					(Some (Keyword key), len)
+				| (None, len) -> 
+					match_keyword keyword_map
+			end
+		| [] -> 
+			(None, 0)
+	in
+	match_keyword keyword_map
+
+let match_int str =
+	match (reg_ex_pred "[0-9]+" str) with
 	| (Some match_str, len) ->
-		(Some (Keyword While), len)
+		(Some (Int (int_of_string match_str)), len)
 	| (None, len) -> (None, len)
 
-
-
-let token_preds = [match_left_paren; match_right_paren; match_left_brace; match_right_brace; match_keyword; match_ident]
+let (token_preds:token_pred list) = [match_left_paren; match_right_paren; match_left_brace; match_right_brace; match_keyword; match_ident; match_int]
 
 let rec find_longest_match str (longest_match: token option * int) token_preds =
 	match token_preds with
@@ -98,15 +130,29 @@ let rec find_longest_match str (longest_match: token option * int) token_preds =
 			| (None, _) -> raise (BadInput ("Unexpected input"))
 		end
 
+let rec trim_program program line_number =
+	if program = "" then (program, line_number) else
+	let rec trim pos line_number =
+		if pos >= (String.length program) then (pos, line_number) else
+		match program.[pos] with
+			| ' ' | '\r' | '\t' -> trim (pos + 1) line_number
+			| '\n' -> trim (pos + 1) (line_number + 1)
+			| _ -> (pos, line_number)
+	in
+	let (pos, line_number) = trim 0 line_number in
+	let len = String.length program in
+	let program = String.sub program pos (len - pos) in
+	(program, line_number)
 
 
-let rec lex program tokens = 
+let rec lex (program : string) (token_lines : token_line list) (line : int): token_line list = 
+	let (program, line) = trim_program program line in
 	if program = "" then
-		tokens
+		token_lines
 	else
 		let (token, len) = find_longest_match program (None, 0) token_preds in
 		let total_len = String.length program in
 		let program = String.sub program len (total_len-len) in
-		lex program (tokens@[token])
+		lex program (token_lines@[(token, line)]) line
 
 
