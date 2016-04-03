@@ -36,9 +36,12 @@ let token_map = [
 	(* Keywords *)
 	("while", Keyword While); ("if", Keyword If); ("then", Keyword Then); (":=", Keyword Assign);
 	(* Ops *)
-	("-", Operator Minus); ("+", Operator Add); ("<", Operator LThan); ("<=", Operator LEThan); (">", Operator GThan); (">=", Operator GEThan); ("&&", Operator And); ("||", Operator Or); ("*", Operator Div); 
+	("-", Operator Minus); ("+", Operator Add); ("*", Operator Mul); ("/", Operator Div); 
+	("<", Operator LThan); ("<=", Operator LEThan); (">", Operator GThan); (">=", Operator GEThan); 
+	("&&", Operator And); ("||", Operator Or);
 	(* Tokens *)
-	("{", LBrace); ("}", RBrace); ("(", LParen); (")", RParen); (":=", Assign)]
+	("{", LBrace); ("}", RBrace); ("(", LParen); (")", RParen); (":=", Assign)
+]
 
 (* token with a line numer *)
 type token_line = token * int
