@@ -11,12 +11,9 @@ OASISFormat: 0.4
 BuildTools: ocamlbuild
 Plugins: META (0.4), DevFiles (0.4)
 
-Library "util"
+Executable "interp"
   Path: src
-  Modules: Util
-
-Library "fontend"
-  Path: src
-  Modules: Lex, Files, Parser
-  BuildDepends: Str
-  FindLibParent: util
+  MainIs: interp.ml
+  CompiledObject: best
+  BuildDepends: 
+    str

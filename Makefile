@@ -40,4 +40,4 @@ configure:
 
 # OASIS_STOP
 utop:
-	utop -I _build/src -init debug.utop
+	utop -I _build/src -I _build/src/frontend -I _build/src/interp -init debug.utop
