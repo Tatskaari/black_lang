@@ -15,5 +15,14 @@ Executable "interp"
   Path: src
   MainIs: interp.ml
   CompiledObject: best
-  BuildDepends: 
-    str
+  BuildDepends: str
+
+Library "util"
+  Path: src
+  Modules: Util
+
+Library "fontend"
+  Path: src
+  Modules: Lex, Files, Parser, Eval
+  BuildDepends: str
+  FindLibParent: util

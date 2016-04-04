@@ -5,7 +5,9 @@ type keyword =
   While
 | If 
 | Else 
-| Assign 
+| Assign
+| Output
+| Input
 
 type operator = 
   Sub
@@ -14,6 +16,7 @@ type operator =
 | LEThan
 | GThan
 | GEThan
+| Equals
 | And
 | Or
 | Mul
@@ -35,11 +38,11 @@ type token =
 (* The token map is a mapping of token types to strings. This works for all tokens appart from ones that store information like idents and ints. *)
 let token_map = [
 	(* Keywords *)
-	("while", Keyword While); ("if", Keyword If); ("else", Keyword Else); (":=", Keyword Assign);
+	("while", Keyword While); ("if", Keyword If); ("else", Keyword Else); (":=", Keyword Assign); ("output", Keyword Output); ("input", Keyword Input);
 	(* Ops *)
-	("-", Operator Sub); ("+", Operator Add); ("*", Operator Mul); ("/", Operator Div); ("**", Operator Pow);
-	("<", Operator LThan); ("<=", Operator LEThan); (">", Operator GThan); (">=", Operator GEThan); 
-	("&&", Operator And); ("||", Operator Or);
+	("-", Operator Sub); ("\\+", Operator Add); ("\\*", Operator Mul); ("/", Operator Div); ("\\*\\*", Operator Pow);
+	("=", Operator Equals); ("<", Operator LThan); ("<=", Operator LEThan); (">", Operator GThan); (">=", Operator GEThan); 
+	("&&", Operator And); ("\\|\\|", Operator Or);
 	(* Tokens *)
 	("{", LBrace); ("}", RBrace); ("(", LParen); (")", RParen); (":=", Assign); (";", StmtEnd)
 ]

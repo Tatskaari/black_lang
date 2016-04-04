@@ -1,3 +1,2 @@
 #require "Str"
-#load_rec "lex.cmo"
-#load_rec "files.cmo"
+#load_rec "interp.cmo"

@@ -9,6 +9,8 @@ type expr =
 type stmt = 
 | Assign of string * expr
 | While of expr * (stmt list)
+| Output of expr
+| Input of string
 | If of expr * (stmt list)
 | IfThenElse of expr * (stmt list) * (stmt list)
 | ScopeBlock of stmt list
@@ -160,6 +162,11 @@ let rec parse_stmt tokens stmts =
 			| (_, line)::_ -> raise_unexpected_input line
 			| _ -> raise (BadInput "Error parsing if statement") 
 		end
+	| (Lex.Keyword Lex.Output, _)::tokens ->
+		let (expr, tokens) = parse_expr tokens Lex.StmtEnd in
+		parse_stmt tokens (stmts@[Output expr])
+	| (Lex.Keyword Lex.Input, _)::(Lex.Ident(ident), _)::(Lex.StmtEnd, _)::tokens ->
+		parse_stmt tokens (stmts@[Input ident])
 	|  (_, line)::_ -> raise_unexpected_input line
 
 let parse tokens = 
