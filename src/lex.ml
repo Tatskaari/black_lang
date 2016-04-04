@@ -18,6 +18,7 @@ type operator =
 | Or
 | Mul
 | Div
+| Pow
 
 type token =
   LBrace
@@ -36,7 +37,7 @@ let token_map = [
 	(* Keywords *)
 	("while", Keyword While); ("if", Keyword If); ("else", Keyword Else); (":=", Keyword Assign);
 	(* Ops *)
-	("-", Operator Sub); ("+", Operator Add); ("*", Operator Mul); ("/", Operator Div); 
+	("-", Operator Sub); ("+", Operator Add); ("*", Operator Mul); ("/", Operator Div); ("**", Operator Pow);
 	("<", Operator LThan); ("<=", Operator LEThan); (">", Operator GThan); (">=", Operator GEThan); 
 	("&&", Operator And); ("||", Operator Or);
 	(* Tokens *)

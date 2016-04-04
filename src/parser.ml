@@ -24,6 +24,7 @@ let get_precidence operator =
 	match operator with
 	| Lex.Mul -> 11
 	| Lex.Div -> 11
+	| Lex.Pow -> 11
 	| Lex.Add -> 10
 	| Lex.Sub -> 10
 	| _ -> 0
