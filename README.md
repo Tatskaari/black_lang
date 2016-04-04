@@ -7,7 +7,7 @@ of this language is demonstrated below however the final syntax of black may be
 completely different. 
 ```
 {
-  ident := 1
+  ident := 1;
   while ident < 100; {
     ident := ident + 1;
   }
