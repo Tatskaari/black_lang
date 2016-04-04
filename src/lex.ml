@@ -1,6 +1,5 @@
 open Printf
-
-exception BadInput of string
+open Util
 
 type keyword = 
   While
@@ -9,7 +8,7 @@ type keyword =
 | Assign 
 
 type operator = 
-  Minus
+  Sub
 | Add
 | LThan
 | LEThan
@@ -26,6 +25,7 @@ type token =
 | LParen
 | RParen
 | Assign
+| StmtEnd
 | Keyword of keyword
 | Operator of operator 
 | Ident of string
@@ -36,11 +36,11 @@ let token_map = [
 	(* Keywords *)
 	("while", Keyword While); ("if", Keyword If); ("then", Keyword Then); (":=", Keyword Assign);
 	(* Ops *)
-	("-", Operator Minus); ("+", Operator Add); ("*", Operator Mul); ("/", Operator Div); 
+	("-", Operator Sub); ("+", Operator Add); ("*", Operator Mul); ("/", Operator Div); 
 	("<", Operator LThan); ("<=", Operator LEThan); (">", Operator GThan); (">=", Operator GEThan); 
 	("&&", Operator And); ("||", Operator Or);
 	(* Tokens *)
-	("{", LBrace); ("}", RBrace); ("(", LParen); (")", RParen); (":=", Assign)
+	("{", LBrace); ("}", RBrace); ("(", LParen); (")", RParen); (":=", Assign); (";", StmtEnd)
 ]
 
 (* token with a line numer *)

@@ -1,0 +1,1 @@
+exception BadInput of string

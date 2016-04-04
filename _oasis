@@ -2,11 +2,21 @@ Name: black
 Version: 0.1
 Synopsis: A toy compiler to practice programming language implementation
 Authors: Jonathan Poole (jonfpoole@gmail.com)
-License: LGPLv3
+License: LGPL
 
 Description: Black will imperitive and possibly later procedural and will target x86. The point of this project is to learn more about compilers rather than produce a useful language.
-Homepage: 
+Homepage: https://github.com/Tatskaari/black_lang
 
 OASISFormat: 0.4
 BuildTools: ocamlbuild
 Plugins: META (0.4), DevFiles (0.4)
+
+Library "util"
+  Path: src
+  Modules: Util
+
+Library "fontend"
+  Path: src
+  Modules: Lex, Files
+  BuildDepends: Str
+  FindLibParent: util
