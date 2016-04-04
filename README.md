@@ -8,8 +8,8 @@ completely different.
 ```
 {
   ident := 1
-  while ident < 100 {
-    ident := ident + 1
+  while ident < 100; {
+    ident := ident + 1;
   }
 }
 ```
