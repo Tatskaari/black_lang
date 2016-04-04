@@ -4,6 +4,7 @@ type expr =
 | Int of int
 | Ident of string
 | Negative of expr
+| Not of expr
 | Op of expr * Lex.operator * expr
 
 type stmt = 
@@ -15,8 +16,8 @@ type stmt =
 | IfThenElse of expr * (stmt list) * (stmt list)
 | ScopeBlock of stmt list
 
-let raise_unexpected_input line =
-	raise (BadInput ("Unexpected token at line " ^ (string_of_int line)))
+let raise_unexpected_input (token, line) =
+	raise (BadInput ("Unexpected token '" ^ (Lex.string_of_token token) ^ "' at line " ^ (string_of_int line)))
 
 let raise_enexpected_eof () = 
 	raise (BadInput "Unexpected end of file")
@@ -44,9 +45,9 @@ let parse_expr tokens end_token =
 				| Lex.Sub ->
 					let (value, tokens) = get_value tokens in
 					(Negative(value), tokens)
-				| _ -> raise_unexpected_input line
+				| _ -> raise_unexpected_input (Lex.Operator operator, line)
 			end
-		| (_, line)::_ -> raise_unexpected_input line
+		| tok_loc::_ -> raise_unexpected_input tok_loc
 		| [] -> raise_enexpected_eof()
 	in
 	(* 	Takes a left hand side of an operation, the operation and the rest of the tokens and will
@@ -54,8 +55,8 @@ let parse_expr tokens end_token =
 	 *)
 	let rec parse_op lhs operator tokens =
 		match tokens with
-		| (Lex.StmtEnd, line)::tokens -> 
-			raise_unexpected_input line
+		| (Lex.StmtEnd, line)::_ -> 
+			raise_unexpected_input (Lex.StmtEnd, line)
 		| (Lex.LParen, _)::tokens ->
 			(* Parse the right hand side of the parenthesis with the first token as the left hand side*)
 			let (paren_lhs, tokens) = get_value tokens in
@@ -96,7 +97,7 @@ let parse_expr tokens end_token =
 	let result = match tokens with
 	| [] -> raise_enexpected_eof()
 	| (Lex.StmtEnd, line)::tokens -> 
-		raise_unexpected_input line
+		raise_unexpected_input (Lex.StmtEnd, line)
 	| (Lex.LParen, _)::tokens ->
 		let (lhs, tokens) = get_value tokens in
 		parse_rhs lhs tokens
@@ -108,7 +109,7 @@ let parse_expr tokens end_token =
 	begin
 		match result with
 		| (expr, (token, _)::tokens) when token = end_token -> (expr, tokens)
-		| (_, (_,line)::_) -> raise_unexpected_input line
+		| (_, tok_loc::_) -> raise_unexpected_input tok_loc
 		| _ -> raise (BadInput "Error parsing expression")
 	end
 
@@ -133,7 +134,7 @@ let rec parse_stmt tokens stmts =
 				let (inner_stms, tokens) = parse_stmt tokens [] in
 				let stmt = While (condition, inner_stms) in
 				parse_stmt tokens (stmts@[stmt])
-			| (_, line)::tokens -> raise_unexpected_input line
+			| tok_loc::tokens -> raise_unexpected_input tok_loc
 			| [] -> raise_enexpected_eof()
 		end
 	| (Lex.Keyword Lex.If, _)::tokens ->
@@ -149,7 +150,7 @@ let rec parse_stmt tokens stmts =
 							match tokens with
 							| (Lex.LBrace, _)::tokens -> tokens
 							| (Lex.Keyword Lex.If, _)::_ -> tokens
-							| (_, line)::_ -> raise_unexpected_input line
+							| tok_loc::_ -> raise_unexpected_input tok_loc
 							| [] -> raise_enexpected_eof()
 						in
 						let (false_stmts, tokens) = parse_stmt tokens [] in
@@ -159,7 +160,7 @@ let rec parse_stmt tokens stmts =
 						(If (condition, true_stms), tokens)
 				in
 				parse_stmt tokens (stmts@[stmt])
-			| (_, line)::_ -> raise_unexpected_input line
+			| tok_loc::_ -> raise_unexpected_input tok_loc
 			| _ -> raise (BadInput "Error parsing if statement") 
 		end
 	| (Lex.Keyword Lex.Output, _)::tokens ->
@@ -167,12 +168,12 @@ let rec parse_stmt tokens stmts =
 		parse_stmt tokens (stmts@[Output expr])
 	| (Lex.Keyword Lex.Input, _)::(Lex.Ident(ident), _)::(Lex.StmtEnd, _)::tokens ->
 		parse_stmt tokens (stmts@[Input ident])
-	|  (_, line)::_ -> raise_unexpected_input line
+	|  tok_loc::_ -> raise_unexpected_input tok_loc
 
 let parse tokens = 
 	match parse_stmt tokens [] with
 	| ([ast], []) -> ast
-	| (_, (_, line)::_) -> raise_unexpected_input line
+	| (_, tok_loc::_) -> raise_unexpected_input tok_loc
 	| (_::_, _) -> raise (BadInput "Syntax Error: No program root") 
 	| ([], []) -> raise(BadInput "No program to parse")
 

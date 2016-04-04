@@ -47,6 +47,8 @@ let rec eval_expr expr env =
 	in
 	let apply_bool_op lhs operator rhs = 
 		match operator with
+		| Lex.And -> VBool(lhs && rhs)
+		| Lex.Or -> VBool(lhs || rhs)
 		| _ -> failwith "Type error: Operation not supported on bools"
 	in
 	let apply_op lhs operator rhs =
@@ -59,6 +61,13 @@ let rec eval_expr expr env =
 		match expr with
 		| P.Op (_) as operation -> eval_expr operation env
 		| P.Int(value) -> VInt(value)
+		| P.Not(expr) -> 
+			let value = 
+				match get_value expr with
+				| VBool(b) -> not b
+				| _ -> failwith "Type error: Operation only supported on bool"
+			in
+			VBool(value)
 		| P.Negative(expr) -> 
 			let value = 
 				match get_value expr with

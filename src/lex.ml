@@ -8,6 +8,7 @@ type keyword =
 | Assign
 | Output
 | Input
+| Not
 
 type operator = 
   Sub
@@ -38,7 +39,7 @@ type token =
 (* The token map is a mapping of token types to strings. This works for all tokens appart from ones that store information like idents and ints. *)
 let token_map = [
 	(* Keywords *)
-	("while", Keyword While); ("if", Keyword If); ("else", Keyword Else); (":=", Keyword Assign); ("output", Keyword Output); ("input", Keyword Input);
+	("while", Keyword While); ("if", Keyword If); ("else", Keyword Else); (":=", Keyword Assign); ("output", Keyword Output); ("input", Keyword Input); ("!", Keyword Not);
 	(* Ops *)
 	("-", Operator Sub); ("\\+", Operator Add); ("\\*", Operator Mul); ("/", Operator Div); ("\\*\\*", Operator Pow);
 	("=", Operator Equals); ("<", Operator LThan); ("<=", Operator LEThan); (">", Operator GThan); (">=", Operator GEThan); 
@@ -53,15 +54,20 @@ type token_line = token * int
 (* Returns the number of characters and the token this predicate is able to match. 0 means no match *)
 type token_pred = string -> (token option*int)
 
-let rec string_to_keyword str keyword_map =
-	match keyword_map with
-	| (key_str, key)::keyword_map -> 
-		if (String.compare key_str str) = 0 then
-			key
-		else
-			string_to_keyword str keyword_map
-	| _ -> 
-		raise (BadInput ("Not a keyword: " ^ str))
+let rec string_of_token token =
+	let rec get_token token_map =
+		match token_map with
+		| (str, map_token)::token_map -> 
+			if map_token = token then
+				str
+			else
+				get_token token_map
+		| _ -> ""
+	in
+	match token with
+	| Ident(ident) -> ident
+	| Int(i) -> string_of_int i
+	| token -> get_token token_map
 
 
 let reg_ex_pred regex_str str  =
