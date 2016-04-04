@@ -17,6 +17,6 @@ Library "util"
 
 Library "fontend"
   Path: src
-  Modules: Lex, Files
+  Modules: Lex, Files, Parser
   BuildDepends: Str
   FindLibParent: util

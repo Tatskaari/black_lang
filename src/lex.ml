@@ -4,7 +4,7 @@ open Util
 type keyword = 
   While
 | If 
-| Then 
+| Else 
 | Assign 
 
 type operator = 
@@ -34,7 +34,7 @@ type token =
 (* The token map is a mapping of token types to strings. This works for all tokens appart from ones that store information like idents and ints. *)
 let token_map = [
 	(* Keywords *)
-	("while", Keyword While); ("if", Keyword If); ("then", Keyword Then); (":=", Keyword Assign);
+	("while", Keyword While); ("if", Keyword If); ("else", Keyword Else); (":=", Keyword Assign);
 	(* Ops *)
 	("-", Operator Sub); ("+", Operator Add); ("*", Operator Mul); ("/", Operator Div); 
 	("<", Operator LThan); ("<=", Operator LEThan); (">", Operator GThan); (">=", Operator GEThan); 

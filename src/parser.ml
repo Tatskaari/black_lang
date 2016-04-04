@@ -15,6 +15,10 @@ type stmt =
 let raise_unexpected_input line =
 	raise (BadInput ("Unexpected token at line " ^ (string_of_int line)))
 
+let raise_enexpected_eof () = 
+	raise (BadInput "Unexpected end of file")
+
+
 let get_precidence operator = 
 	match operator with
 	| Lex.Mul -> 11
@@ -55,7 +59,7 @@ let parse_expr tokens end_token =
 		| token::tokens -> 
 			let op = Op (lhs, operator, (get_value token)) in
 			(op, tokens)
-		| [] -> raise (BadInput "Unexpected end of file")
+		| [] -> raise_enexpected_eof()
 	and parse_rhs lhs tokens =
 		match tokens with
 		| (Lex.Operator(operator), _)::tokens -> 
@@ -70,7 +74,7 @@ let parse_expr tokens end_token =
 		| [] -> raise (BadInput "Unexpected end of file")
 	in
 	let result = match tokens with
-	| [] -> raise (BadInput "Unexpected end of file")
+	| [] -> raise_enexpected_eof()
 	| (Lex.StmtEnd, line)::tokens -> 
 		raise_unexpected_input line
 	| (Lex.LParen, _)::token::tokens ->
@@ -84,7 +88,6 @@ let parse_expr tokens end_token =
 		| (_, (_,line)::_) -> raise_unexpected_input line
 		| _ -> raise (BadInput "Error parsing expression")
 	end
-
 
 let rec parse_stmt tokens stmts = 
 	match tokens with
@@ -108,7 +111,35 @@ let rec parse_stmt tokens stmts =
 				let stmt = While (condition, inner_stms) in
 				parse_stmt tokens (stmts@[stmt])
 			| (_, line)::tokens -> raise_unexpected_input line
-			| [] -> raise (BadInput "Unexpected end of file")
+			| [] -> raise_enexpected_eof()
+		end
+	| (Lex.Keyword Lex.If, _)::tokens ->
+		let (condition, tokens) = parse_expr tokens Lex.RParen in
+		begin
+			match tokens with
+			| (Lex.LBrace, _)::tokens -> 
+				let (true_stms, tokens) = parse_stmt tokens [] in
+				let (stmt,tokens) = 
+					begin
+						match tokens with
+						| (Lex.Keyword Lex.Else, _)::tokens -> 
+							let tokens = 
+								match tokens with
+								| (Lex.LBrace, _)::tokens -> tokens
+								| (Lex.Keyword Lex.If, _)::_ -> tokens
+								| (_, line)::_ -> raise_unexpected_input line
+								| [] -> raise_enexpected_eof()
+							in
+							let (false_stmts, tokens) = parse_stmt tokens [] in
+							let stmt = IfThenElse (condition, true_stms, false_stmts) in
+							(stmt, tokens)
+						| _ -> 
+							(If (condition, true_stms), tokens)
+					end
+				in
+				parse_stmt tokens (stmts@[stmt])
+			| (_, line)::_ -> raise_unexpected_input line
+			| _ -> raise (BadInput "Error parsing if statement") 
 		end
 	|  (_, line)::_ -> raise_unexpected_input line
 
