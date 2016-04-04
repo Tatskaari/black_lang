@@ -3,6 +3,7 @@ open Util
 type expr = 
 | Int of int
 | Ident of string
+| Negative of expr
 | Op of expr * Lex.operator * expr
 
 type stmt = 
@@ -29,11 +30,21 @@ let get_precidence operator =
 
 let parse_expr tokens end_token =
 	(* Converts a token*int to an expr *)
-	let get_value token_loc = 
-		match token_loc with
-		| (Lex.Int(v), _) -> Int(v)
-		| (Lex.Ident(v), _) -> Ident(v)
-		| (_, line) -> raise_unexpected_input line
+	let rec get_value tokens = 
+		match tokens with
+		| (Lex.Int(v), _)::tokens -> (Int(v), tokens)
+		| (Lex.Ident(v), _)::tokens -> (Ident(v), tokens)
+		| (Lex.Operator operator, line)::tokens ->
+			begin
+				match operator with
+				| Lex.Add -> get_value tokens
+				| Lex.Sub ->
+					let (value, tokens) = get_value tokens in
+					(Negative(value), tokens)
+				| _ -> raise_unexpected_input line
+			end
+		| (_, line)::_ -> raise_unexpected_input line
+		| [] -> raise_enexpected_eof()
 	in
 	(* 	Takes a left hand side of an operation, the operation and the rest of the tokens and will
 		return an operation.
@@ -42,24 +53,28 @@ let parse_expr tokens end_token =
 		match tokens with
 		| (Lex.StmtEnd, line)::tokens -> 
 			raise_unexpected_input line
-		| (Lex.LParen, _)::token::tokens ->
+		| (Lex.LParen, _)::tokens ->
 			(* Parse the right hand side of the parenthesis with the first token as the left hand side*)
-			let (rhs, tokens) = parse_rhs (get_value token) tokens in
+			let (paren_lhs, tokens) = get_value tokens in
+			let (rhs, tokens) = parse_rhs paren_lhs tokens in
 			let op = Op (lhs, operator, rhs) in
 			(op, tokens)
 		| token::(Lex.Operator(next_operator), line)::tokens -> 
+			let (next_value, _) = get_value [token] in
 			if (get_precidence next_operator) > (get_precidence operator) then
 				(* If the next op has higher precidence, parse that first and use the result as the RHS *)
-				let (rhs, tokens) = parse_op (get_value token) next_operator tokens in
+				let (rhs, tokens) = parse_op next_value next_operator tokens in
 				let op = Op (lhs, operator, rhs) in
 				(op, tokens)
 			else
-				let op = Op (lhs, operator, (get_value token)) in
+				let op = Op (lhs, operator, next_value) in
 				(op, (Lex.Operator(next_operator), line)::tokens)
-		| token::tokens -> 
-			let op = Op (lhs, operator, (get_value token)) in
+		| [] -> 
+			raise_enexpected_eof()
+		| tokens -> 
+			let (rhs, tokens) = get_value tokens in
+			let op = Op (lhs, operator, rhs) in
 			(op, tokens)
-		| [] -> raise_enexpected_eof()
 	and parse_rhs lhs tokens =
 		match tokens with
 		| (Lex.Operator(operator), _)::tokens -> 
@@ -69,19 +84,24 @@ let parse_expr tokens end_token =
 			(lhs, tokens)
 		| (Lex.RParen, _)::tokens -> 
 			(lhs, tokens)
-		| token::tokens ->
-			parse_rhs (get_value token) tokens
-		| [] -> raise (BadInput "Unexpected end of file")
+		| [] -> 
+			raise_enexpected_eof()
+		| tokens ->
+			let (lhs, tokens) = get_value tokens in
+			parse_rhs lhs tokens
 	in
 	let result = match tokens with
 	| [] -> raise_enexpected_eof()
 	| (Lex.StmtEnd, line)::tokens -> 
 		raise_unexpected_input line
-	| (Lex.LParen, _)::token::tokens ->
-		parse_rhs (get_value token) tokens
-	| token::tokens ->
-		parse_rhs (get_value token) tokens
+	| (Lex.LParen, _)::tokens ->
+		let (lhs, tokens) = get_value tokens in
+		parse_rhs lhs tokens
+	| tokens ->
+		let (lhs, tokens) = get_value tokens in
+		parse_rhs lhs tokens
 	in
+	(* Check that after parsing the expressoin, the next token is the end token *)
 	begin
 		match result with
 		| (expr, (token, _)::tokens) when token = end_token -> (expr, tokens)
@@ -120,22 +140,20 @@ let rec parse_stmt tokens stmts =
 			| (Lex.LBrace, _)::tokens -> 
 				let (true_stms, tokens) = parse_stmt tokens [] in
 				let (stmt,tokens) = 
-					begin
-						match tokens with
-						| (Lex.Keyword Lex.Else, _)::tokens -> 
-							let tokens = 
-								match tokens with
-								| (Lex.LBrace, _)::tokens -> tokens
-								| (Lex.Keyword Lex.If, _)::_ -> tokens
-								| (_, line)::_ -> raise_unexpected_input line
-								| [] -> raise_enexpected_eof()
-							in
-							let (false_stmts, tokens) = parse_stmt tokens [] in
-							let stmt = IfThenElse (condition, true_stms, false_stmts) in
-							(stmt, tokens)
-						| _ -> 
-							(If (condition, true_stms), tokens)
-					end
+					match tokens with
+					| (Lex.Keyword Lex.Else, _)::tokens -> 
+						let tokens = 
+							match tokens with
+							| (Lex.LBrace, _)::tokens -> tokens
+							| (Lex.Keyword Lex.If, _)::_ -> tokens
+							| (_, line)::_ -> raise_unexpected_input line
+							| [] -> raise_enexpected_eof()
+						in
+						let (false_stmts, tokens) = parse_stmt tokens [] in
+						let stmt = IfThenElse (condition, true_stms, false_stmts) in
+						(stmt, tokens)
+					| _ -> 
+						(If (condition, true_stms), tokens)
 				in
 				parse_stmt tokens (stmts@[stmt])
 			| (_, line)::_ -> raise_unexpected_input line
