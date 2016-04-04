@@ -20,7 +20,7 @@ let get_precidence operator =
 	| Lex.Sub -> 10
 	| _ -> 0
 
-let parse_expr tokens =
+let parse_expr tokens end_token =
 	(* Converts a token*int to an expr *)
 	let get_value token_loc = 
 		match token_loc with
@@ -59,7 +59,7 @@ let parse_expr tokens =
 		| (Lex.Operator(operator), _)::tokens -> 
 			let (lhs, tokens) = parse_op lhs operator tokens in
 			parse_rhs lhs tokens
-		| (Lex.StmtEnd, _)::tokens -> 
+		| (token, _)::tokens when token = end_token-> 
 			(lhs, tokens)
 		| (Lex.RParen, _)::tokens -> 
 			(lhs, tokens)
@@ -74,8 +74,8 @@ let parse_expr tokens =
 	| (Lex.LParen, _)::token::tokens ->
 		begin
 			match parse_rhs (get_value token) tokens with
-			| (expr, (Lex.StmtEnd, _)::tokens) -> (expr, tokens)
-			| _ -> raise (BadInput ("Unexpected token"))
+			| (expr, (token, _)::tokens) when token = end_token -> (expr, tokens)
+			| expr_tokens -> expr_tokens
 		end
 	| token::tokens ->
 		parse_rhs (get_value token) tokens
@@ -91,11 +91,11 @@ let rec parse_stmt tokens stmts =
 		let scope_block = ScopeBlock inner_stms in
 		parse_stmt tokens (stmts@[scope_block])
 	| (Lex.Ident(ident), _)::(Lex.Keyword Lex.Assign, _)::tokens -> 
-		let (expr, tokens) = parse_expr tokens in
+		let (expr, tokens) = parse_expr tokens Lex.StmtEnd in
 		let assign = Assign (ident, expr) in
 		parse_stmt tokens (stmts@[assign])
 	| (Lex.Keyword While, _)::tokens ->
-		let (condition, tokens) = parse_expr tokens in
+		let (condition, tokens) = parse_expr tokens Lex.RParen in
 		begin
 			match tokens with
 			| (Lex.LBrace, _)::tokens -> 
@@ -104,4 +104,5 @@ let rec parse_stmt tokens stmts =
 				parse_stmt tokens (stmts@[stmt])
 			| (_, line)::tokens -> raise (BadInput ("Unexpected token at line " ^ (string_of_int line)))
 		end
+	|  (_, line)::_ -> raise(BadInput ("Unexpected token on line " ^ (string_of_int line)))
 
